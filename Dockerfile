@@ -1,4 +1,4 @@
-FROM golang:1.24.6-trixie
+FROM golang:1.26.5-trixie
 
 RUN set -eux; \
 	apt-get install --update -y --no-install-recommends \
@@ -9,7 +9,7 @@ RUN set -eux; \
 
 # https://github.com/tianon/fake-git
 # https://github.com/tianon/fake-git/commits/HEAD
-ENV FAKEGIT_COMMIT dc6774bbecc1f72de44d02bfd4385a4e6f45f807
+ENV FAKEGIT_COMMIT aaa875961611764a86a21cf80c250929a7786179
 RUN set -eux; \
 	git init /opt/fake-git; \
 	git -C /opt/fake-git fetch --depth 1 https://github.com/tianon/fake-git.git "$FAKEGIT_COMMIT:"; \
@@ -30,10 +30,8 @@ RUN set -eux; \
 		echo 'set -Eeuo pipefail -x'; \
 # this scrapes our raw version number out of "version.go" (which we then use as our "commit ref" so it's "vcs.revision" in our metadata, and "cross-grade" to semver below for our fake tag so Go thinks we have a version number worth including)
 		echo 'FAKEGIT_GO_REVISION="$(grep -oEm1 "[0-9][0-9.+a-z-]+" version.go)"'; \
-# validate our assumptions about the above version number
-		echo 'grep <<<"$FAKEGIT_GO_REVISION" -E "^[0-9]+[.][0-9]+\$"'; \
 # Go *requires* semver, which is silly, but outside our control, so this takes our version numbers like "1.2" and "cross-grades" them to be like "v1.2.0", per (Go's implementation of) semver (and the VCS implementation is even stricter and requires the full triplet)
-		echo 'FAKEGIT_GO_SEMVER="v${FAKEGIT_GO_REVISION}.0"'; \
+		echo 'FAKEGIT_GO_SEMVER="v${FAKEGIT_GO_REVISION}"'; \
 		echo 'export FAKEGIT_GO_REVISION FAKEGIT_GO_SEMVER'; \
 		echo 'eval "go build $BUILD_FLAGS -o /go/bin/gosu-$ARCH" github.com/tianon/gosu'; \
 		echo 'if go version -m "/go/bin/gosu-$ARCH" |& tee "/proc/$$/fd/1" | grep "(devel)" >&2; then exit 1; fi'; \
